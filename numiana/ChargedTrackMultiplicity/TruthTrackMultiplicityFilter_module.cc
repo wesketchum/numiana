@@ -25,6 +25,7 @@
 
 #include "lardataobj/MCBase/MCTrack.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include "larcore/Geometry/Geometry.h"
 
 
 namespace ana {
@@ -64,6 +65,10 @@ private:
   //float         fMaxSecVtxDist;
 
   bool          fVerbose;
+
+  float  fFiducialX;
+  float  fFiducialY;
+  float  fFiducialZ;
   
   TTree* fAnaTree;
   unsigned int run;
@@ -109,6 +114,7 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
   
   auto const& mctrack_handle = ev.getValidHandle< std::vector<sim::MCTrack> >(fMCTrackTag);
   auto const& mctruth_handle = ev.getValidHandle< std::vector<simb::MCTruth> >(fMCTruthTag);
+  art::ServiceHandle<geo::Geometry> geo;
   
   TVector3 nu_pos;
   int n_tracks_pass=0;
@@ -119,6 +125,7 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
       continue;
 
     auto const& nu = mctruth.GetNeutrino();
+       
     ccnc = nu.CCNC();
     mode = nu.Mode();
     q2 = nu.QSqr();
@@ -133,6 +140,15 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
 
     if(mode==0) //CC
       lep_energy = nu.Lepton().E();
+
+    if(nu.Nu().Vx()<0.0+fFiducialX || 
+       nu.Nu().Vx()>2.*geo->DetHalfWidth()-fFiducialX ||
+       nu.Nu().Vy()<-1.*geo->DetHalfHeight()+fFiducialY || 
+       nu.Nu().Vy()>1.*geo->DetHalfHeight()-fFiducialY ||
+       nu.Nu().Vz()<0.0+fFiducialZ || 
+       nu.Nu().Vz()>geo->DetLength()-fFiducialZ )
+      return false;
+
   }
 
   ntrks_1cm=0; ntrks_5cm=0; ntrks_10cm=0; ntrks_20cm=0;
@@ -148,6 +164,16 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
        (trk.Start().Position().Vect() - nu_pos).Mag() > 0.3 ) //wire pitch/resolution cut
       continue;
     
+    auto trk_start = trk.Start().Position().Vect();
+
+    if(trk_start.x()<0.0+fFiducialX || 
+       trk_start.x()>2.*geo->DetHalfWidth()-fFiducialX ||
+       trk_start.y()<-1.*geo->DetHalfHeight()+fFiducialY || 
+       trk_start.y()>1.*geo->DetHalfHeight()-fFiducialY ||
+       trk_start.z()<0.0+fFiducialZ || 
+       trk_start.z()>geo->DetLength()-fFiducialZ )
+    continue;
+
     length = (trk.End().Position().Vect() - trk.Start().Position().Vect()).Mag();
     if(length>1)
       ntrks_1cm++;
@@ -162,7 +188,9 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
       n_tracks_pass++;
   }
 
-  if(n_tracks_pass>fMinNPrimaryMCTracks)
+  fAnaTree->Fill();
+
+  if(n_tracks_pass>=fMinNPrimaryMCTracks)
     return true;
   
   return false;
@@ -179,6 +207,10 @@ void ana::TruthTrackMultiplicityFilter::reconfigure(fhicl::ParameterSet const & 
   //fMinNSecVtx     = p.get<int>("MinNSecVtx",-1);
   //fMinNSecVtxDist = p.get<float>("MinNSecVtxDist",0.0);
   //fMaxNSecVtxDist = p.get<float>("MaxNSecVtxDist",999999.999);
+
+  fFiducialX = p.get<float>("FiducialX",10.);
+  fFiducialY = p.get<float>("FiducialY",10.);
+  fFiducialZ = p.get<float>("FiducialZ",10.);
 
   fVerbose = p.get<bool>("Verbose",false);
 }
