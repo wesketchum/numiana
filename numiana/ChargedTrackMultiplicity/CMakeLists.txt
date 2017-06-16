@@ -4,9 +4,10 @@ art_make( LIBRARY_NAME numiana_ChargedTrackMultiplicity
 	  	 MODULE_LIBRARIES
 			nusimdata_SimulationBase
 			lardataobj_MCBase
-			art_Utilities canvas_Utilities
-			art_Persistency_Common canvas_Persistency_Common
-			art_Persistency_Provenance canvas_Persistency_Provenance
+			canvas
+			art_Utilities
+			art_Persistency_Common
+			art_Persistency_Provenance
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_IO_SOURCES}
                         ${ART_FRAMEWORK_PRINCIPAL}

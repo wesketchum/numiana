@@ -162,7 +162,9 @@ bool ana::TruthTrackMultiplicityFilter::filter(art::Event & ev)
       n_tracks_pass++;
   }
 
-  if(n_tracks_pass>fMinNPrimaryMCTracks)
+  fAnaTree->Fill();
+
+  if(n_tracks_pass>=fMinNPrimaryMCTracks)
     return true;
   
   return false;
